@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres-prod
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Containerfile.prod
+    container_name: backend-prod
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: always
+    command: sh -c "bunx prisma migrate deploy && bun run start"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Containerfile.prod
+    container_name: frontend-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    restart: always
+
+volumes:
+  postgres_prod_data:
+
+networks:
+  app-network:
+    driver: bridge
