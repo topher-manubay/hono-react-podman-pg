@@ -1,3 +1,25 @@
+
+## 🐘 PostgreSQL User Setup for Local Development
+
+If you want to create a dedicated database user instead of using the default `postgres` user, follow these steps:
+
+1. Connect to the PostgreSQL container as the default superuser:
+
+```bash
+podman exec -it blingdream_postgres psql -U postgres
+
+\c blingdream_db
+
+-- Allow the user to create tables and other objects in public
+GRANT ALL PRIVILEGES ON SCHEMA public TO blingdream_user;
+
+-- Optional: grant default privileges for future tables
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT ALL PRIVILEGES ON TABLES TO blingdream_user;
+
+
+
+
 # Project Setup Guide
 
 Full-stack application with Bun, Hono, React, PostgreSQL, and Podman.
